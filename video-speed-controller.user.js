@@ -12,7 +12,7 @@
 /*
  * Keyboard shortcuts:
  *   Control+.  — speed up: snaps to next .0/.5 if not on grid, else +0.5x (max 16x)
- *   Control+,  — slow down: always halves current speed (min 0.25x)
+ *   Control+,  — slow down: always halves current speed (min 0.1x)
  *
  * A pill widget appears on each video showing current speed.
  * Hover over a video to show the widget again.
@@ -20,8 +20,8 @@
 
 'use strict';
 
-const MIN_SPEED = 0.25;
-const MAX_SPEED = 16;
+const MIN_SPEED = 0.1;
+const MAX_SPEED = 100;
 const STEP = 0.5;
 const DEFAULT_SPEED = 1;
 
