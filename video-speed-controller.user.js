@@ -11,9 +11,9 @@
 
 /*
  * Keyboard shortcuts:
- *   ]  — speed up 0.5x (max 16x)
- *   [  — slow down 0.5x (min 0.25x)
- *   \  — reset to 1x
+ *   Option+.  — speed up 0.5x (max 16x)
+ *   Option+,  — slow down: halves speed if on a .0/.5 step,
+ *               otherwise snaps to the next lower .0/.5 step
  *
  * A pill widget appears on each video showing current speed.
  * Hover over a video to show the widget again.
@@ -37,6 +37,14 @@ function setSpeed(video, rate) {
   rateMap.set(video, rate);
   video.playbackRate = rate;
   updateWidget(video); // defined later
+}
+
+function slowerSpeed(current) {
+  // If not on a 0.5-step grid, snap down to the next .0 or .5 first
+  if (current % 0.5 > 0.001) {
+    return Math.floor(current / 0.5) * 0.5; // clamped to MIN_SPEED by setSpeed if 0
+  }
+  return current / 2;
 }
 
 function attachRateGuard(video) {
@@ -87,7 +95,7 @@ function createWidget(video) {
   display.style.cssText = 'padding:2px 6px;min-width:3.5ch;text-align:center;';
   display.textContent = '1.0x';
 
-  wrap.appendChild(btn('−', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) - STEP)));
+  wrap.appendChild(btn('−', () => setSpeed(video, slowerSpeed(rateMap.get(video) || DEFAULT_SPEED))));
   wrap.appendChild(display);
   wrap.appendChild(btn('+', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) + STEP)));
 
@@ -163,15 +171,12 @@ document.addEventListener('keydown', (e) => {
 
   const current = rateMap.get(video) || DEFAULT_SPEED;
 
-  if (e.key === ']') {
+  if (e.altKey && e.code === 'Period') {
     e.preventDefault();
     setSpeed(video, current + STEP);
-  } else if (e.key === '[') {
+  } else if (e.altKey && e.code === 'Comma') {
     e.preventDefault();
-    setSpeed(video, current - STEP);
-  } else if (e.key === '\\') {
-    e.preventDefault();
-    setSpeed(video, DEFAULT_SPEED);
+    setSpeed(video, slowerSpeed(current));
   }
 });
 
