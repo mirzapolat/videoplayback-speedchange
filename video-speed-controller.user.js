@@ -19,6 +19,8 @@ const DEFAULT_SPEED = 1;
 // Tracks the user-intended rate per video element
 const rateMap = new WeakMap();
 
+let activeVideo = null;
+
 function setSpeed(video, rate) {
   if (!isFinite(rate)) return;
   rate = Math.min(MAX_SPEED, Math.max(MIN_SPEED, rate));
@@ -123,7 +125,7 @@ function attachToVideo(video) {
 
   showWidget(video);
 
-  video.addEventListener('mouseenter', () => showWidget(video));
+  video.addEventListener('mouseenter', () => { activeVideo = video; showWidget(video); });
 }
 
 function init() {
@@ -141,5 +143,26 @@ function init() {
 
   observer.observe(document.body, { childList: true, subtree: true });
 }
+
+document.addEventListener('keydown', (e) => {
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+
+  const video = activeVideo || document.querySelector('video');
+  if (!video) return;
+
+  const current = rateMap.get(video) || DEFAULT_SPEED;
+
+  if (e.key === ']') {
+    e.preventDefault();
+    setSpeed(video, current + STEP);
+  } else if (e.key === '[') {
+    e.preventDefault();
+    setSpeed(video, current - STEP);
+  } else if (e.key === '\\') {
+    e.preventDefault();
+    setSpeed(video, DEFAULT_SPEED);
+  }
+});
 
 init();
