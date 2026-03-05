@@ -11,10 +11,11 @@ Tampermonkey userscript that enables playback speeds beyond 2x on any site with 
 
 | Key | Action |
 |-----|--------|
-| `]` | Speed up 0.5x |
-| `[` | Slow down 0.5x |
-| `\` | Reset to 1x |
+| `Control+.` | Speed up (snaps to next 0.5 step if not on grid, else +0.5x) |
+| `Control+,` | Slow down (halves current speed) |
 
-Range: 0.25x → 16x. A speed indicator appears on each video and fades after 2 seconds.
+Range: 0.1x → 100x. A speed indicator appears on each video and fades after 2 seconds.
+
+The `+` and `−` buttons on the widget follow the same logic as the keyboard shortcuts.
 
 Works on YouTube, Vimeo, Twitter, and any site using HTML5 `<video>`.
