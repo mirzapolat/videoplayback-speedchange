@@ -9,6 +9,16 @@
 // @run-at       document-idle
 // ==/UserScript==
 
+/*
+ * Keyboard shortcuts:
+ *   ]  — speed up 0.5x (max 16x)
+ *   [  — slow down 0.5x (min 0.25x)
+ *   \  — reset to 1x
+ *
+ * A pill widget appears on each video showing current speed.
+ * Hover over a video to show the widget again.
+ */
+
 'use strict';
 
 const MIN_SPEED = 0.25;
