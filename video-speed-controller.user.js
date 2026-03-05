@@ -109,3 +109,37 @@ function showWidget(video) {
   clearTimeout(wrap._fadeTimer);
   wrap._fadeTimer = setTimeout(() => { wrap.style.opacity = '0'; }, 2000);
 }
+
+function attachToVideo(video) {
+  if (video.dataset.speedControlled) return;
+  video.dataset.speedControlled = '1';
+
+  rateMap.set(video, DEFAULT_SPEED);
+  attachRateGuard(video);
+
+  const wrap = createWidget(video);
+  positionWidget(video, wrap);
+  video._speedWidget = wrap;
+
+  showWidget(video);
+
+  video.addEventListener('mouseenter', () => showWidget(video));
+}
+
+function init() {
+  document.querySelectorAll('video').forEach(attachToVideo);
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        if (node.tagName === 'VIDEO') attachToVideo(node);
+        node.querySelectorAll?.('video').forEach(attachToVideo);
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+init();
