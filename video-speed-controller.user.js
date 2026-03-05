@@ -11,9 +11,8 @@
 
 /*
  * Keyboard shortcuts:
- *   Option+.  — speed up 0.5x (max 16x)
- *   Option+,  — slow down: halves speed if on a .0/.5 step,
- *               otherwise snaps to the next lower .0/.5 step
+ *   Control+.  — speed up: snaps to next .0/.5 if not on grid, else +0.5x (max 16x)
+ *   Control+,  — slow down: always halves current speed (min 0.25x)
  *
  * A pill widget appears on each video showing current speed.
  * Hover over a video to show the widget again.
@@ -36,15 +35,15 @@ function setSpeed(video, rate) {
   rate = Math.min(MAX_SPEED, Math.max(MIN_SPEED, rate));
   rateMap.set(video, rate);
   video.playbackRate = rate;
-  updateWidget(video); // defined later
+  updateWidget(video);
 }
 
-function slowerSpeed(current) {
-  // If not on a 0.5-step grid, snap down to the next .0 or .5 first
+function fasterSpeed(current) {
+  // If not on a 0.5-step grid, snap up to the next .0 or .5
   if (current % 0.5 > 0.001) {
-    return Math.floor(current / 0.5) * 0.5; // clamped to MIN_SPEED by setSpeed if 0
+    return Math.ceil(current / 0.5) * 0.5;
   }
-  return current / 2;
+  return current + STEP;
 }
 
 function attachRateGuard(video) {
@@ -56,12 +55,16 @@ function attachRateGuard(video) {
   });
 }
 
+function formatSpeed(rate) {
+  // Show exact value: trim trailing zeros but always show at least one decimal
+  const s = rate.toString();
+  return s.includes('.') ? s + 'x' : s + '.0x';
+}
+
 function createWidget(video) {
   const wrap = document.createElement('div');
   wrap.style.cssText = `
-    position:absolute;
-    top:8px;
-    left:8px;
+    position:fixed;
     z-index:2147483647;
     display:flex;
     align-items:center;
@@ -95,36 +98,34 @@ function createWidget(video) {
   display.style.cssText = 'padding:2px 6px;min-width:3.5ch;text-align:center;';
   display.textContent = '1.0x';
 
-  wrap.appendChild(btn('−', () => setSpeed(video, slowerSpeed(rateMap.get(video) || DEFAULT_SPEED))));
+  wrap.appendChild(btn('−', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) / 2)));
   wrap.appendChild(display);
-  wrap.appendChild(btn('+', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) + STEP)));
+  wrap.appendChild(btn('+', () => setSpeed(video, fasterSpeed(rateMap.get(video) || DEFAULT_SPEED))));
 
   wrap._display = display;
+
+  document.body.appendChild(wrap);
 
   return wrap;
 }
 
 function positionWidget(video, wrap) {
-  let parent = video.parentElement;
-  while (parent && getComputedStyle(parent).position === 'static') {
-    parent = parent.parentElement;
-  }
-  if (!parent) parent = video.parentElement;
-
-  parent.style.position = parent.style.position || 'relative';
-  parent.appendChild(wrap);
+  const rect = video.getBoundingClientRect();
+  wrap.style.top = (rect.top + 8) + 'px';
+  wrap.style.left = (rect.left + 8) + 'px';
 }
 
 function updateWidget(video) {
   const wrap = video._speedWidget;
   if (!wrap) return;
-  wrap._display.textContent = (rateMap.get(video) || DEFAULT_SPEED).toFixed(1) + 'x';
+  wrap._display.textContent = formatSpeed(rateMap.get(video) || DEFAULT_SPEED);
   showWidget(video);
 }
 
 function showWidget(video) {
   const wrap = video._speedWidget;
   if (!wrap) return;
+  positionWidget(video, wrap);
   wrap.style.opacity = '1';
   clearTimeout(wrap._fadeTimer);
   wrap._fadeTimer = setTimeout(() => { wrap.style.opacity = '0'; }, 2000);
@@ -138,7 +139,6 @@ function attachToVideo(video) {
   attachRateGuard(video);
 
   const wrap = createWidget(video);
-  positionWidget(video, wrap);
   video._speedWidget = wrap;
 
   showWidget(video);
@@ -171,12 +171,12 @@ document.addEventListener('keydown', (e) => {
 
   const current = rateMap.get(video) || DEFAULT_SPEED;
 
-  if (e.altKey && e.code === 'Period') {
+  if (e.ctrlKey && e.code === 'Period') {
     e.preventDefault();
-    setSpeed(video, current + STEP);
-  } else if (e.altKey && e.code === 'Comma') {
+    setSpeed(video, fasterSpeed(current));
+  } else if (e.ctrlKey && e.code === 'Comma') {
     e.preventDefault();
-    setSpeed(video, slowerSpeed(current));
+    setSpeed(video, current / 2);
   }
 });
 
