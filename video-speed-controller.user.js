@@ -35,3 +35,77 @@ function attachRateGuard(video) {
     }
   });
 }
+
+function createWidget(video) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `
+    position:absolute;
+    top:8px;
+    left:8px;
+    z-index:2147483647;
+    display:flex;
+    align-items:center;
+    background:rgba(0,0,0,0.65);
+    color:#fff;
+    font:bold 13px/1 monospace;
+    border-radius:999px;
+    padding:4px 2px;
+    gap:0;
+    pointer-events:auto;
+    transition:opacity 0.3s;
+    opacity:0;
+  `;
+
+  const btn = (label, fn) => {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.style.cssText = `
+      background:none;
+      border:none;
+      color:#fff;
+      font:bold 13px/1 monospace;
+      cursor:pointer;
+      padding:2px 8px;
+    `;
+    b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
+    return b;
+  };
+
+  const display = document.createElement('span');
+  display.style.cssText = 'padding:2px 6px;min-width:3.5ch;text-align:center;';
+  display.textContent = '1.0x';
+
+  wrap.appendChild(btn('−', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) - STEP)));
+  wrap.appendChild(display);
+  wrap.appendChild(btn('+', () => setSpeed(video, (rateMap.get(video) || DEFAULT_SPEED) + STEP)));
+
+  wrap._display = display;
+
+  return wrap;
+}
+
+function positionWidget(video, wrap) {
+  let parent = video.parentElement;
+  while (parent && getComputedStyle(parent).position === 'static') {
+    parent = parent.parentElement;
+  }
+  if (!parent) parent = video.parentElement;
+
+  parent.style.position = parent.style.position || 'relative';
+  parent.appendChild(wrap);
+}
+
+function updateWidget(video) {
+  const wrap = video._speedWidget;
+  if (!wrap) return;
+  wrap._display.textContent = (rateMap.get(video) || DEFAULT_SPEED).toFixed(1) + 'x';
+  showWidget(video);
+}
+
+function showWidget(video) {
+  const wrap = video._speedWidget;
+  if (!wrap) return;
+  wrap.style.opacity = '1';
+  clearTimeout(wrap._fadeTimer);
+  wrap._fadeTimer = setTimeout(() => { wrap.style.opacity = '0'; }, 2000);
+}
